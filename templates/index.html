@@ -1,0 +1,1959 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISBN Space</title>
+    <style>
+        :root {
+            --bg: #555;
+            --padding: 15px;
+            --margin: 10px;
+            --border-radius: 10px;
+            --box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            --button-bg: #1a73e8;
+            --button-color: white;
+            --text-color: #ffffff;
+            --subtext-color: #555;
+            --muted-color: #777;
+            --control-size: 40px;
+            --control-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            --input-border: 1px solid #ccc;
+            --input-bg: #fff;
+            --overlay-bg: rgba(0, 0, 0, 0.7)
+        }
+
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: rgb(22, 21, 21);
+        }
+
+        body,
+        html {
+            font: 1em sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100%;
+        }
+
+
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+
+
+        .canvas-container {
+            display: block;
+            /* width: 100%;
+            height: 100%; */
+        }
+
+
+        canvas {
+            display: block;
+        }
+
+
+        .right {
+            right: var(--padding);
+
+        }
+
+        .left {
+            left: var(--padding);
+        }
+
+
+        select {
+            width: 100%;
+            padding: 12px;
+            background: #252525e0;
+            /* border: var(--input-border); */
+            border-radius: var(--border-radius);
+            font-size: 14px;
+            color: var(--text-color);
+            appearance: none;
+        }
+
+        input[type="text"] {
+            padding: var(--padding);
+            background: #252525e0;
+
+            border: var(--input-border);
+            border-radius: var(--border-radius);
+            font-size: 14px;
+            color: var(--text-color);
+            appearance: none;
+        }
+
+        select,
+        input[type="color"] {
+            cursor: pointer;
+        }
+
+        .panel {
+            position: absolute;
+            color: white;
+            background: rgb(70 70 70 / 50%);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            backdrop-filter: blur(10px);
+        }
+
+        .panel .image-section {
+            width: 100%;
+            height: 150px;
+            border-top-left-radius: var(--border-radius);
+            border-top-right-radius: var(--border-radius);
+            background: url('nyc-thumbnail.jpg') center/cover no-repeat;
+        }
+
+
+        .panel .text-section {
+            padding: var(--padding);
+        }
+
+        .panel h2 {
+            margin: 0;
+            font-size: 20px;
+            color: var(--text-color);
+        }
+
+        .panel p {
+            margin: var(--margin) 0;
+            font-size: 14px;
+        }
+
+        .panel p:first-of-type {
+            color: var(--subtext-color);
+        }
+
+        .panel p:last-of-type {
+            color: var(--muted-color);
+            line-height: 1.5;
+        }
+
+
+        .vertical-middle {
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+
+        .action-button {
+            font-size: 14px;
+            color: var(--button-color);
+            background: var(--button-bg);
+            border: none;
+
+        }
+
+
+
+
+
+        .coord-overlay {
+            position: fixed;
+            left: var(--padding);
+            top: var(--padding);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: monospace;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .select-list {
+            list-style: none;
+            font-family: monospace;
+        }
+
+        .panel {
+            position: absolute;
+        }
+
+        .panel-container {
+            /* padding: var(--padding); */
+        }
+
+        .panel-sidebar {
+            bottom: 40px;
+
+        }
+
+
+        .color-input {
+            border: none;
+            /* width: 40px; */
+            /* height: 40px; */
+            border-radius: 50%;
+        }
+
+
+        input[type="text"] {
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        input[type="color"] {
+            border: none;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+
+        .list-item-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 4fr 1fr;
+            gap: 10px;
+            align-items: center;
+            /* margin: var(--margin) 0; */
+            /* padding: var(--padding); */
+            /* background: rgba(128, 128, 128, 0.377); */
+            /* border-radius: var(--border-radius); */
+        }
+
+        /* .circular-button {
+            transform: rotate(45deg);
+            width: 30px; 
+           height: 30px;
+            border-radius: 50%;
+            border: none;
+        } */
+
+        /* .circular-button:hover {
+            background: #8080806e;
+        } */
+
+        ul {
+            padding: 0;
+        }
+
+
+        .checkmark {
+            /* width: 20px; */
+            /* height: 20px; */
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 5px;
+            position: relative;
+        }
+
+        .toolbar {
+            display: grid;
+            position: absolute;
+            bottom: calc(var(--padding)*4);
+            right: var(--padding);
+            gap: var(--padding);
+        }
+
+        button {
+            padding: 10px;
+
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+        }
+
+        button i {
+            font-size: 20px;
+        }
+
+        button:hover {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .map-area {
+            position: relative;
+        }
+    </style>
+</head>
+
+<div class="map-area" id="map-view">
+
+    <div class="panel left panel-sidebar ">
+        <div class="panel-container">
+            <div style="padding: 10px;">
+                <label for="Layers">Layers:</label>
+                <select name="Layers" id="map-selector">
+                    <option value="" disabled>Indicators</option>
+                    <option layer-type="indicator" value="groups">Registrations Groups</option>
+                    <option value="" disabled selected>Datasets</option>
+                    {% for image in images %}
+                    <option layer-type="image" value="{{image[1]}}">{{image[0]}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+
+            <ul class="select-list" id="selectList">
+            </ul>
+
+
+
+        </div>
+    </div>
+
+    <div id="coordOverlay" class="coord-overlay"></div>
+
+
+
+
+    <div class="toolbar">
+
+        <button class="tool-button" id="pan-mode" title="Pan">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none">
+                <path
+                    d="M8.00001 3.09779C8.00001 3.09779 4.03375 2.74194 3.38784 3.38785C2.74192 4.03375 3.09784 8 3.09784 8"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                <path
+                    d="M8.00001 20.9022C8.00001 20.9022 4.03375 21.2581 3.38784 20.6122C2.74192 19.9662 3.09784 16 3.09784 16"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M16 3.09779C16 3.09779 19.9663 2.74194 20.6122 3.38785C21.2581 4.03375 20.9022 8 20.9022 8"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M16 20.9022C16 20.9022 19.9663 21.2581 20.6122 20.6122C21.2581 19.9662 20.9022 16 20.9022 16"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M14.0108 9.99847L20.0625 3.94678" stroke="currentColor" stroke-width="1.5"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M9.99696 14.0024L3.63966 20.3807" stroke="currentColor" stroke-width="1.5"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M9.99733 10.0024L3.84571 3.85889" stroke="currentColor" stroke-width="1.5"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M13.9795 14.0024L20.5279 20.4983" stroke="currentColor" stroke-width="1.5"
+                    stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </button>
+
+        <button class="tool-button" id="zoom-mode" title="Zoom Area (Clrt+Drag)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none">
+                <path
+                    d="M19.4 19.4L22 22M20.7 14.85C20.7 11.6191 18.0809 9 14.85 9C11.6191 9 9 11.6191 9 14.85C9 18.0809 11.6191 20.7 14.85 20.7C18.0809 20.7 20.7 18.0809 20.7 14.85Z"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                <path
+                    d="M19.075 19.075L22 22M12.9 14.85H14.85M14.85 14.85H16.8M14.85 14.85V12.9M14.85 14.85V16.8M20.7 14.85C20.7 11.6191 18.0809 9 14.85 9C11.6191 9 9 11.6191 9 14.85C9 18.0809 11.6191 20.7 14.85 20.7C18.0809 20.7 20.7 18.0809 20.7 14.85Z"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                <path
+                    d="M2 6C2.1305 4.6645 2.4262 3.7663 3.09625 3.09625C3.7663 2.4262 4.6645 2.1305 6 2M6 22C4.6645 21.8695 3.7663 21.5738 3.09625 20.9037C2.4262 20.2337 2.1305 19.3355 2 18M22 6C21.8695 4.6645 21.5738 3.7663 20.9037 3.09625C20.2337 2.4262 19.3355 2.1305 18 2M2 10L2 14M14 2L10 2"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+        </button>
+
+        <button class="tool-button" id="reset-state" title="Reset View" id="reset-viw">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none">
+                <path d="M17.5 17.5L22 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                    stroke-linejoin="round" />
+                <path
+                    d="M20 11C20 6.02944 15.9706 2 11 2C6.02944 2 2 6.02944 2 11C2 15.9706 6.02944 20 11 20C15.9706 20 20 15.9706 20 11Z"
+                    stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+                <path d="M8 14L14 8M8 8L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                    stroke-linejoin="round" />
+            </svg>
+        </button>
+    </div>
+
+
+    <div class="overlayx" style="position: absolute; top: 0; height: 200px; width: 200px;">
+
+    </div>
+
+    <canvas id="gridCanvas" class="canvas-container"></canvas>
+
+</div>
+
+
+
+<body>
+
+
+    <script>
+        // Settings
+        const animationDuration = 5000 * 20;
+        const maxScale = 3000
+        const minScale = .05
+        const pixel_size = 2
+        const map_width = 50000
+        const map_height = 40000
+        const base_size = [3125, 2500]
+        const isbn0 = 978000000000
+        const edgeScrollBorder = 50;
+        const scrollSpeed = 10;
+
+
+        const view = document
+
+
+
+        var mode = "pan"
+        const zoomtoggle = view.getElementById('zoom-mode');
+        const pantoggle = view.getElementById('pan-mode');
+        toggleMode()
+        toggleMode()
+        pantoggle.addEventListener('click', () => { if (mode !== "pan") toggleMode() });
+        zoomtoggle.addEventListener('click', () => { if (mode !== "zoom") toggleMode() });
+
+
+        function storeList(listKey, list) {
+            try {
+                localStorage.setItem(listKey, JSON.stringify(list));
+            } catch (error) {
+                console.error("Error storing list in browser:", error);
+            }
+        }
+
+        function getList(listKey, initialValue) {
+            try {
+                const storedList = localStorage.getItem(listKey);
+                if (storedList) {
+                    return JSON.parse(storedList);
+                } else {
+                    return initialValue;
+                }
+            } catch (error) {
+                console.error("Error retrieving list from browser:", error);
+                return initialValue;
+            }
+        }
+
+        function resetList(listKey) {
+            try {
+                localStorage.removeItem(listKey);
+            } catch (error) {
+                console.error("Error resetting list in browser:", error);
+            }
+        }
+
+
+        const resetButton = view.getElementById('reset-state');
+        const map_select = view.getElementById("map-selector")
+        // const filter_selector = view.getElementById("filter-selector")
+        const selectList = view.getElementById('selectList');
+        const adjust_stack = view.getElementById('adjust-stack');
+
+        var stack_z_axis = 0
+
+        // adjust_stack.addEventListener("change", function (params) {
+
+        //     stack_z_axis = params / 1000
+        // })
+
+        // filter_selector.addEventListener('change', handleFilterChange)
+        map_select.addEventListener('change', handleSelectChange);
+
+        var filter = 'multiply'
+        function handleFilterChange() {
+            const option = filter_selector.value
+
+            if (option === "") {
+                return
+            }
+            filter = option
+
+            draw()
+        }
+        function handleSelectChange() {
+            const option = map_select.value
+
+            if (option === "") {
+                return
+            }
+            const color = "#FFFFFF"
+            const selected = map_select[map_select.selectedIndex]
+            const listItem = createselectItem(option, color, selected.text, true, selected.getAttribute("layer-type"));
+            selectList.prepend(listItem)
+            map_select.value = ""
+        }
+
+
+
+        let showBoundaryLayer = false
+        let boundaryColor = "white"
+        let layers = getList("layers", [])
+
+        setSelection()
+        resetButton.addEventListener('click', function () {
+            // resetList("layers")
+            layers = getList("layers", [])
+            setSelection()
+            center()
+            draw()
+        })
+
+        function editlayers() {
+            layers = getSelection()
+            const boundaryLayer = layers.find(layer => layer.id === "groups" && layer["view-enabled"]);
+            showBoundaryLayer = !!boundaryLayer;
+            if (boundaryLayer) {
+                boundaryColor = boundaryLayer.color;
+            }
+
+            storeList("layers", layers)
+            draw()
+        }
+
+        const observer = new MutationObserver((mutationsList, observer) => {
+            editlayers()
+        })
+
+
+        observer.observe(selectList, { childList: true, subtree: true });
+
+
+
+        function getSelection() {
+            let listItems = selectList.querySelectorAll('li');
+            selects = [];
+            for (let i = listItems.length - 1; i >= 0; i--) {
+                const item = listItems[i];
+                const enabled = item.getAttribute("view-enabled")
+                const type = item.getAttribute("layer-type")
+
+                selects.push({
+                    enabled: enabled == "true" ? true : false,
+                    id: item.getAttribute("id"),
+                    color: item.getAttribute("color"),
+                    name: item.querySelector('div').textContent,
+                    type: type
+                });
+
+            }
+            return selects;
+        }
+
+        function setSelection() {
+
+            while (selectList.firstChild) {
+                selectList.removeChild(selectList.firstChild);
+            }
+
+            layers.forEach(function (item) {
+                const listItem = createselectItem(item["id"], item["color"], item["name"], item["view-enabled"], item["layer-type"]);
+                selectList.prepend(listItem)
+            })
+        }
+
+        function createselectItem(task, color, name, enabled, type) {
+            const listItem = view.createElement('li');
+
+            listItem.setAttribute("id", task)
+            listItem.setAttribute("color", color)
+            listItem.setAttribute("layer-type", type)
+
+            listItem.className = 'select-item';
+            listItem.draggable = true;
+
+            const itemText = view.createElement('span');
+            itemText.textContent = name.replace('🞡', "");
+
+            const checkbox = view.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.className = "layer-check checkmark";
+            checkbox.value = enabled
+
+            checkbox.addEventListener('change', () => {
+                listItem.setAttribute("view-enabled", checkbox.checked)
+                editlayers()
+            });
+
+            const colorInput = view.createElement('input');
+            colorInput.type = 'color';
+            colorInput.className = 'color-input';
+            colorInput.value = color;
+            colorInput.addEventListener('input', (e) => {
+                listItem.setAttribute("color", e.target.value)
+                editlayers()
+            });
+
+            const removeButton = view.createElement("div");
+            removeButton.className = 'circular-button';
+            removeButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none"><path d="M19.5 5.5L18.8803 15.5251C18.7219 18.0864 18.6428 19.3671 18.0008 20.2879C17.6833 20.7431 17.2747 21.1273 16.8007 21.416C15.8421 22 14.559 22 11.9927 22C9.42312 22 8.1383 22 7.17905 21.4149C6.7048 21.1257 6.296 20.7408 5.97868 20.2848C5.33688 19.3626 5.25945 18.0801 5.10461 15.5152L4.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /><path d="M3 5.5H21M16.0557 5.5L15.3731 4.09173C14.9196 3.15626 14.6928 2.68852 14.3017 2.39681C14.215 2.3321 14.1231 2.27454 14.027 2.2247C13.5939 2 13.0741 2 12.0345 2C10.9688 2 10.436 2 9.99568 2.23412C9.8981 2.28601 9.80498 2.3459 9.71729 2.41317C9.32164 2.7167 9.10063 3.20155 8.65861 4.17126L8.05292 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /><path d="M9.5 16.5L9.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /><path d="M14.5 16.5L14.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>';
+            removeButton.addEventListener('click', () => {
+                selectList.removeChild(listItem);
+            });
+
+            const div = view.createElement('div');
+            div.className = 'list-item-container'
+            div.appendChild(checkbox);
+            div.appendChild(colorInput);
+            div.appendChild(itemText);
+            div.appendChild(removeButton);
+            listItem.appendChild(div);
+
+            listItem.addEventListener('dragstart', () => {
+                draggingElement = listItem;
+                listItem.classList.add('dragging');
+            });
+
+            listItem.addEventListener('dragend', () => {
+                draggingElement = null;
+                listItem.classList.remove('dragging');
+            });
+
+            return listItem;
+        }
+
+
+
+        selectList.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            const afterElement = getDragAfterElement(selectList, event.clientY);
+            if (afterElement == null) {
+                selectList.appendChild(draggingElement);
+            } else {
+                selectList.insertBefore(draggingElement, afterElement);
+            }
+        });
+
+
+
+        selectList.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            const afterElement = getDragAfterElement(selectList, event.clientY);
+            if (afterElement == null) {
+                selectList.appendChild(draggingElement);
+            } else {
+                selectList.insertBefore(draggingElement, afterElement);
+            }
+        });
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.select-item:not(.dragging)')];
+
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+
+        const canvas = view.getElementById('gridCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const coordOverlay = view.getElementById('coordOverlay');
+        let mouseInCanvas = false;
+
+
+        const urlParams = new URLSearchParams(window.location.search);
+        let scale = parseFloat(urlParams.get('scale')) || 1;
+        let offsetX = parseFloat(urlParams.get('offsetX')) || 0;
+        let offsetY = parseFloat(urlParams.get('offsetY')) || 0;
+        const maxDepth = 5;
+        let edgeScrollActive = false;
+        let mouseX = 0;
+        let mouseY = 0;
+
+        // Zoom box 
+        let isDrawingZoomBox = false;
+        let zoomBoxStartX = 0;
+        let zoomBoxStartY = 0;
+        let zoomBoxEndX = 0;
+        let zoomBoxEndY = 0;
+
+        // Dragging  
+        let isDragging = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+
+
+        // Animation 
+        let isAnimating = false;
+        let targetScale = 1;
+        let targetOffsetX = 0;
+        let targetOffsetY = 0;
+
+        let animationStartTime = 0;
+
+
+        function center() {
+
+            continueanimation = false
+
+            offsetX = canvas.width / 4
+            offsetY = canvas.height / 8
+            scale = (canvas.width / 2) / 3125
+
+
+            updateUrlParams()
+
+        }
+
+        var image_store = {
+            "": NaN
+        }
+        function randomHEXColor() {
+
+            return '#' + (Math.random() * 0xFFFFFF << 0).toString(16).padStart(6, '0');
+
+        }
+
+
+        var deferList = []
+        const loadingIndicator = document.createElement('div');
+        loadingIndicator.textContent = 'Loading...';
+        loadingIndicator.style.position = 'fixed';
+        loadingIndicator.style.top = '50%';
+        loadingIndicator.style.left = '50%';
+        loadingIndicator.style.transform = 'translate(-50%, -50%)';
+        loadingIndicator.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        loadingIndicator.style.color = 'white';
+        loadingIndicator.style.padding = '10px';
+        loadingIndicator.style.borderRadius = '5px';
+        loadingIndicator.style.display = 'none';
+        document.body.appendChild(loadingIndicator);
+
+        // async function rundeffered() {
+        //     loadingIndicator.style.display = 'block';
+        //     const count = deferList.length;
+
+        //     deferList.forEach(element => {
+        //         element();
+        //     });
+
+        //     deferList = [];
+        //     if (count > 0) {
+        //         setTimeout(() => {
+        //             draw();
+        //             loadingIndicator.style.display = 'none';
+        //         }, 100);
+        //     } else {
+        //         loadingIndicator.style.display = 'none';
+        //     }
+        // }
+        loadingIndicator.style.transition = 'opacity 0.5s ease-in-out';
+        loadingIndicator.style.opacity = '0';
+
+        async function rundeffered() {
+            const count = deferList.length;
+            if (count > 0) {
+                loadingIndicator.style.display = 'block';
+                setTimeout(() => {
+                    loadingIndicator.style.opacity = '1';
+                    setTimeout(() => {
+                        loadingIndicator.style.opacity = '0';
+                        setTimeout(() => {
+                            loadingIndicator.style.display = 'none';
+                            draw()
+                        }, 1000);
+                    }, 1000);
+                }, 10);
+            }
+
+            deferList.forEach(element => {
+                element();
+            });
+
+            deferList = [];
+            if (count > 0) {
+                draw();
+            }
+        }
+
+
+        function drawImage(x, y, layer, id, depth, width, height) {
+            if (!layer) {
+                return
+            }
+
+            const pyramid = `tile/${layer}/${depth}/${id}.png`
+            if (image_store.hasOwnProperty(pyramid)) {
+                imgx = image_store[pyramid]
+                if (imgx.isloaded) {
+                    ctx.drawImage(imgx.img, x, y, width, height)
+                    return true
+                }
+            } else {
+
+                deferList.push(function () {
+                    let img = new Image();
+                    img.onload = function () {
+                        image_store[pyramid].isloaded = true
+                        // draw()
+                    }
+                    img.onerror = function (e) {
+                        console.log(e)
+                    }
+                    img.src = pyramid
+                    image_store[pyramid] = {
+                        img,
+                        isloaded: false,
+                        pixels: undefined
+                    }
+                })
+            }
+
+            return false
+        }
+
+
+
+
+
+        function isbnAnswer(clean_isbn) {
+            components = {
+                "prefix": JSON.stringify(clean_isbn).slice(0, 3),
+            }
+            const year = components["prefix"] == "978" ? "2007-2018" : "2019+"
+            return `Year: ${year} PerPixel: ${intRounds(clean_isbn)}`
+        }
+
+
+        function drawGrid(x, y, width, height, depth, target, visibleLeft, visibleRight, visibleTop, visibleBottom, cellIndex, color) {
+            if (depth >= maxDepth) return;
+            // Check if cell is outside visible area
+
+            if (x + width < visibleLeft || x > visibleRight || y + height < visibleTop || y > visibleBottom) {
+                return;
+            }
+
+
+
+            if (depth == target) {
+                var d = false
+
+
+
+                var index = 0
+                ctx.globalCompositeOperation = "screen";
+
+                var step = 0
+
+                layers.forEach(function (layer) {
+                    if (!layer.enabled || layer.type !== "image") {
+                        return
+                    }
+
+                    ctx.save()
+                    ctx.globalAlpha = 1 - index * .3
+                    const drawn = drawImage(x + (index * .003), y + (index * .003), layer.id, cellIndex, depth, width, height)
+
+
+                    if (drawn) {
+                        ctx.globalCompositeOperation = "multiply"
+                        ctx.fillStyle = layer.color
+                        ctx.fillRect(x, y, width, height)
+                    }
+                    ctx.restore()
+                    index++
+                    step++
+                })
+
+                ctx.globalCompositeOperation = "normal"
+
+                ctx.globalAlpha = 1
+
+
+                if (d) {
+
+
+                    return
+                }
+            }
+
+            ctx.globalCompositeOperation = "normal"
+
+
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 1 / scale;
+            ctx.strokeRect(x, y, width, height);
+
+            // // Draw cell index text
+            // ctx.fillStyle = color;
+            // ctx.font = `${Math.max(10, 12 / scale)}px Arial`; 
+            // ctx.textAlign = 'center';
+            // ctx.textBaseline = 'middle';
+            // ctx.fillText(
+            //     `${cellIndex}`,
+            //     // cellIndex,
+            //     x + width / 2,
+            //     y + height / 2
+            // );
+            // if (depth == target - 1) {
+            //     // ctx.globalCompositeOperation = 'normal';
+
+            //     if (layers[0].id && layers[0].enabled && drawImage(x, y, layers[0].id, cellIndex, depth, width, height)) {
+            //     }
+            //     // ctx.globalCompositeOperation = pcomp;
+
+            // }
+
+
+            const halfWidth = width / 2;
+            const halfHeight = height / 2;
+
+            child_color = "#5555557a"
+
+            if (depth < maxDepth - 1) {
+                // Recursively draw sub-cells with updated indices
+                drawGrid(x, y, halfWidth, halfHeight, depth + 1, target, visibleLeft, visibleRight, visibleTop, visibleBottom, cellIndex + "0", child_color);
+                drawGrid(x + halfWidth, y, halfWidth, halfHeight, depth + 1, target, visibleLeft, visibleRight, visibleTop, visibleBottom, cellIndex + "1", child_color);
+                drawGrid(x, y + halfHeight, halfWidth, halfHeight, depth + 1, target, visibleLeft, visibleRight, visibleTop, visibleBottom, cellIndex + "2", child_color);
+                drawGrid(x + halfWidth, y + halfHeight, halfWidth, halfHeight, depth + 1, target, visibleLeft, visibleRight, visibleTop, visibleBottom, cellIndex + "3", child_color);
+            }
+        }
+
+        var currentTarget = 0
+
+        var maptarget = Math.pow(maxDepth - 1, 2)
+
+        var scale_size = {
+            pixel: 100,
+            unit: "U"
+        }
+
+
+        function draw() {
+            scale_size = scaleRounds(scale)
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.imageSmoothingEnabled = scale < 1;
+            ctx.save();
+            ctx.translate(offsetX, offsetY);
+
+            ctx.scale(scale, scale);
+
+            const offX = isAnimating ? targetOffsetX : offsetX
+            const offY = isAnimating ? targetOffsetY : offsetY
+            const tscale = isAnimating ? targetScale : scale
+
+            const visibleLeft = -offX / tscale;
+            const visibleRight = (canvas.width - offX) / tscale;
+            const visibleTop = -offY / tscale;
+            const visibleBottom = (canvas.height - offY) / tscale;
+
+            currentTarget = Math.min(Math.floor(tscale / pixel_size), maxDepth - 1)
+
+            drawGrid(0, 0, base_size[0], base_size[1], 0, currentTarget, visibleLeft, visibleRight, visibleTop, visibleBottom, "0");
+
+            // drawBoundaries(0, 0, tscale, base_size[0], base_size[1])
+
+
+            ctx.globalCompositeOperation = "normal";
+
+
+            drawBoundaries()
+
+
+
+            ctx.restore();
+
+
+            const corner = [canvas.width - 20, canvas.height - 8]
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
+            ctx.beginPath();
+            ctx.moveTo(corner[0], corner[1]);
+            ctx.lineTo(corner[0] - scale_size.pixel, corner[1]);
+            ctx.stroke();
+            ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
+            ctx.beginPath();
+            ctx.moveTo(corner[0], corner[1] + 4);
+            ctx.lineTo(corner[0] - scale_size.pixel, corner[1] + 4);
+            ctx.stroke();
+            ctx.fillStyle = "white";
+
+
+
+
+            ctx.font = "Arial";
+            ctx.fillText(
+                `${scale_size.unit}`,
+                corner[0] - scale_size.pixel,
+                corner[1] - 4
+            );
+
+            if (isDrawingZoomBox) {
+                ctx.strokeStyle = 'rgba(0, 0, 255, 0.5)';
+                ctx.lineWidth = 5;
+                ctx.beginPath();
+                const x = Math.min(zoomBoxStartX, zoomBoxEndX);
+                const y = Math.min(zoomBoxStartY, zoomBoxEndY);
+                const width = Math.abs(zoomBoxEndX - zoomBoxStartX);
+                const height = Math.abs(zoomBoxEndY - zoomBoxStartY);
+                ctx.strokeRect(x, y, width, height);
+            }
+
+            if (scale_size.unit < 2) {
+                drawDomGrid(visibleLeft, visibleRight, visibleTop, visibleBottom)
+            }
+
+            rundeffered()
+
+
+        }
+
+        const scaleX = base_size[0] / map_width;
+        const scaleY = base_size[1] / map_height;
+
+        // Function to convert pixel number to (row, column)
+        function getCoordinates(pixelNumber) {
+            return {
+                row: Math.floor(pixelNumber / map_width),
+                col: pixelNumber % map_width
+            };
+        }
+
+
+        function rowScan(row, startRow, endRow, start, end, map_width, scaleX, scaleY) {
+            let startCol, endCol;
+
+            if (row === startRow && row === endRow) {
+                startCol = Math.min(start.col, end.col);
+                endCol = Math.max(start.col, end.col);
+            } else if (row === startRow) {
+                startCol = start.col;
+                endCol = map_width - 1;
+            } else if (row === endRow) {
+                startCol = 0;
+                endCol = end.col;
+            } else {
+                startCol = 0;
+                endCol = map_width - 1;
+            }
+
+            const x1 = startCol * scaleX;
+            const y1 = row * scaleY;
+            const width = (endCol - startCol + 1) * scaleX;
+            const height = 1 * scaleY;
+
+            return {
+                x1: x1,
+                y1: y1,
+                width: width,
+                height: height,
+            };
+        }
+        const tenrow = 50000 * 10
+
+        function drawBoundaryPath(startPixel, endPixel, title) {
+
+
+            ctx.lineWidth = 1 / scale;
+            ctx.globalAlpha = 1;
+            // ctx.strokeStyle = randomHEXColor() // 'brown';
+            const start = getCoordinates(startPixel);
+            const end = getCoordinates(endPixel - 1);
+
+            const [startRow, endRow] = start.row <= end.row ?
+                [start.row, end.row] : [end.row, start.row];
+
+
+            const co0 = rowScan(startRow, startRow, endRow, start, end, map_width, scaleX, scaleY)
+            const co = rowScan(endRow, startRow, endRow, start, end, map_width, scaleX, scaleY)
+
+
+            // // Draw cell index text
+            ctx.fillStyle = "white";
+            ctx.font = `${Math.max(.02, 12 / scale)}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            // ctx.fillText("Hello",)
+
+            const center = [co0.x1 + co0.width / 2, (co.y1 + co0.y1) / 2]
+
+            ctx.strokeText(`${title}`, center[0], center[1]);
+
+            ctx.fillText(`${title}`, center[0], center[1]);
+
+
+            ctx.beginPath()
+            ctx.moveTo(co0.x1, co0.y1 + co0.height)
+            ctx.lineTo(co0.x1, co0.y1)
+            ctx.lineTo(co0.width, co0.y1)
+            ctx.lineTo(co0.width + co0.x1, co0.y1)
+            ctx.lineTo(co0.width + co0.x1, co0.height + co0.y1)
+            ctx.lineTo(co0.width + co0.x1, co.y1)
+            ctx.lineTo(co.x1 + co.width, co.y1)
+            ctx.lineTo(co.x1 + co.width, co.y1 + co.height)
+            ctx.lineTo(co.x1, co.y1 + co.height)
+            ctx.lineTo(co.x1, co0.y1 + co0.height)
+            ctx.lineTo(co0.x1, co0.y1 + co0.height)
+            ctx.stroke()
+            return
+        }
+
+
+
+
+        function drawDomGrid(visibleLeft, visibleRight, visibleTop, visibleBottom) {
+
+
+
+            // document
+
+        }
+
+        function updateUrlParams() {
+            const newParams = new URLSearchParams({
+                scale: scale.toFixed(3),
+                offsetX: Math.round(offsetX),
+                offsetY: Math.round(offsetY)
+            });
+            window.history.replaceState({}, '', `?${newParams.toString()}`);
+        }
+
+
+        var continueanimation = false
+
+        function startanimation() {
+            continueanimation = true
+            requestAnimationFrame(animateZoom);
+        }
+
+        function animateZoom() {
+            if (!isAnimating) return;
+            const currentTime = Date.now();
+            const elapsedTime = currentTime - animationStartTime;
+            const progress = Math.min(elapsedTime / animationDuration, 1);
+
+            // Interpolate scale and offset
+            scale = scale + (targetScale - scale) * progress;
+            offsetX = offsetX + (targetOffsetX - offsetX) * progress;
+            offsetY = offsetY + (targetOffsetY - offsetY) * progress;
+
+            draw();
+
+            if (continueanimation && progress < .98) {
+                requestAnimationFrame(animateZoom);
+            } else {
+                isAnimating = false;
+                updateUrlParams()
+            }
+        }
+
+
+        function handleZoomToBox() {
+            const gridX1 = (zoomBoxStartX - offsetX) / scale;
+            const gridY1 = (zoomBoxStartY - offsetY) / scale;
+            const gridX2 = (zoomBoxEndX - offsetX) / scale;
+            const gridY2 = (zoomBoxEndY - offsetY) / scale;
+
+            const boxWidth = Math.abs(gridX2 - gridX1);
+            const boxHeight = Math.abs(gridY2 - gridY1);
+
+            if (boxWidth === 0 || boxHeight === 0) return;
+
+            const scaleX = canvas.width / boxWidth;
+            const scaleY = canvas.height / boxHeight;
+            targetScale = Math.min(Math.min(scaleX, scaleY), maxScale);
+
+            const centerX = (gridX1 + gridX2) / 2;
+            const centerY = (gridY1 + gridY2) / 2;
+
+            targetOffsetX = canvas.width / 2 - centerX * targetScale;
+            targetOffsetY = canvas.height / 2 - centerY * targetScale;
+
+            isAnimating = true;
+            animationStartTime = Date.now();
+            startanimation()
+        }
+
+
+        function triggerZoomBox(e) {
+            zoomBoxStartX = e.clientX - 3;
+            zoomBoxStartY = e.clientY - 3;
+            zoomBoxEndX = e.clientX + 3;
+            zoomBoxEndY = e.clientY + 3;
+            handleZoomToBox()
+        }
+
+        function handleMouseDown(e) {
+            continueanimation = false
+            if (mode === 'zoom') {
+                isDrawingZoomBox = true;
+                zoomBoxStartX = e.clientX;
+                zoomBoxStartY = e.clientY;
+                zoomBoxEndX = e.clientX;
+                zoomBoxEndY = e.clientY;
+            } else if (mode === 'pan') {
+                isDragging = true;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+            }
+        }
+
+        let global_position = {
+
+            ISBN: 0,
+            X: 0,
+            Y: 0,
+
+        }
+
+        function handleMouseMove(e) {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+
+            if (mode === 'zoom' && isDrawingZoomBox) {
+                zoomBoxEndX = e.clientX;
+                zoomBoxEndY = e.clientY;
+                draw();
+            } else if (mode === 'pan' && isDragging) {
+                const deltaX = e.clientX - lastMouseX;
+                const deltaY = e.clientY - lastMouseY;
+                offsetX += deltaX;
+                offsetY += deltaY;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+                draw();
+            }
+
+
+            if (mouseInCanvas) {
+                const gridX = (e.clientX - offsetX) / scale;
+                const gridY = (e.clientY - offsetY) / scale;
+
+                if (gridX < 0 || gridY < 0 || gridX > base_size[0] || gridY > base_size[1]) {
+                    coordOverlay.style.display = 'none';
+                    return
+                }
+                coordOverlay.style.display = 'block';
+
+                // Clamp values to canvas dimensions
+                const clampedX = Math.max(0, Math.min(base_size[0], gridX)) * (maptarget);
+                const clampedY = Math.max(0, Math.min(base_size[1], gridY)) * (maptarget);
+                positiionUpdate(clampedX, clampedY)
+            }
+
+            if (mode === 'zoom' && !isDragging) {
+                checkEdgeScroll();
+            }
+        }
+
+
+        function positiionUpdate(clampedX, clampedY) {
+
+            const wochk = `${isbn0 + Math.floor(clampedY) * map_width + Math.floor(clampedX)}`
+
+
+            const isbn = `${wochk}${isbnCheckDigit(wochk)}`
+
+            global_position = {
+                ISBN: isbn,
+                X: (clampedX).toFixed(1),
+                Y: (clampedY).toFixed(1)
+            }
+
+            const country = getISBNIdentity(wochk)
+
+            coordOverlay.textContent =
+                `ISBN:${global_position.ISBN} X:${(clampedX).toFixed(1)} Y:${(clampedY).toFixed(1)}`;
+        }
+
+        const sizefactor = base_size[0] * maxDepth
+
+        function scaleRounds(zoom) {
+
+            const roundingSteps = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 2500, 5000, 10000, 50000];
+
+            const metersPerPixel = (sizefactor / (scale))
+            const targetPixels = 100;
+            const targetMeters = metersPerPixel * targetPixels;
+            const targetKm = targetMeters / 1000;
+
+
+            let selectedScale = roundingSteps.find(v => v >= targetKm) || roundingSteps[roundingSteps.length - 1];
+
+            const scalePixels = (selectedScale * 1000) / metersPerPixel;
+
+            return { unit: selectedScale, pixel: scalePixels };
+        }
+
+
+
+        function checkEdgeScroll() {
+            const scroll = {
+                x: 0,
+                y: 0,
+                left: mouseX < edgeScrollBorder,
+                right: mouseX > canvas.width - edgeScrollBorder,
+                top: mouseY < edgeScrollBorder,
+                bottom: mouseY > canvas.height - edgeScrollBorder
+            };
+
+            if (scroll.left) scroll.x = -1;
+            if (scroll.right) scroll.x = 1;
+            if (scroll.top) scroll.y = -1;
+            if (scroll.bottom) scroll.y = 1;
+
+            if (scroll.x !== 0 || scroll.y !== 0) {
+                if (!edgeScrollActive) {
+                    continueanimation = false
+                    edgeScrollActive = true;
+
+                    requestAnimationFrame(edgeScrollLoop);
+                }
+            } else {
+                edgeScrollActive = false;
+            }
+        }
+
+        function edgeScrollLoop() {
+            if (!edgeScrollActive) return;
+
+            const scroll = {
+                x: 0,
+                y: 0
+            };
+
+            if (mouseX < edgeScrollBorder) scroll.x = 1;
+            if (mouseX > canvas.width - edgeScrollBorder) scroll.x = -1;
+            if (mouseY < edgeScrollBorder) scroll.y = 1;
+            if (mouseY > canvas.height - edgeScrollBorder) scroll.y = -1;
+
+            offsetX += scroll.x * scrollSpeed;
+            offsetY += scroll.y * scrollSpeed;
+
+            draw();
+            requestAnimationFrame(edgeScrollLoop);
+        }
+
+
+        function handleMouseUp(e) {
+            if (mode === 'zoom' && isDrawingZoomBox) {
+                isDrawingZoomBox = false;
+                handleZoomToBox();
+            }
+            isDragging = false;
+            updateUrlParams();
+        }
+
+        function toggleMode() {
+            if (mode === 'zoom') {
+                pantoggle.classList.add("active")
+                zoomtoggle.classList.remove("active")
+                mode = 'pan';
+            } else {
+                pantoggle.classList.remove("active")
+                zoomtoggle.classList.add("active")
+                mode = 'zoom';
+            }
+        }
+
+        function handleWheel(event) {
+
+            event.preventDefault()
+            continueanimation = false
+            const zoomFactor = 0.1;
+            const mouseX = event.clientX - offsetX;
+            const mouseY = event.clientY - offsetY;
+
+            if (event.deltaY < 0) {
+
+                if (scale > maxScale) {
+                    return
+                }
+                scale *= 1 + zoomFactor;
+                offsetX -= mouseX * zoomFactor;
+                offsetY -= mouseY * zoomFactor;
+            } else {
+
+
+                if (scale < minScale) {
+                    return
+                }
+                scale /= 1 + zoomFactor;
+                offsetX += mouseX * zoomFactor / (1 + zoomFactor);
+                offsetY += mouseY * zoomFactor / (1 + zoomFactor);
+            }
+
+
+
+            draw();
+            updateUrlParams();
+        }
+
+
+        function handleTouchStart(event) {
+            if (event.touches.length === 2) {
+                // Start pinch zoom
+                initialDistance = getDistance(event.touches[0], event.touches[1]);
+                lastScale = scale;
+            } else if (event.touches.length === 1) {
+                // Start dragging
+                isDragging = true;
+                lastMouseX = event.touches[0].clientX;
+                lastMouseY = event.touches[0].clientY;
+            }
+        }
+
+
+        function handleTouchMove(event) {
+            if (event.touches.length === 2) {
+                // Handle pinch zoom
+                const currentDistance = getDistance(event.touches[0], event.touches[1]);
+                if (initialDistance !== null) {
+                    const newScale = (currentDistance / initialDistance) * lastScale;
+                    scale = newScale;
+                    draw();
+                }
+            } else if (event.touches.length === 1 && isDragging) {
+                // Handle dragging
+                const touch = event.touches[0];
+                const deltaX = touch.clientX - lastMouseX;
+                const deltaY = touch.clientY - lastMouseY;
+
+                offsetX += deltaX;
+                offsetY += deltaY;
+
+                lastMouseX = touch.clientX;
+                lastMouseY = touch.clientY;
+
+                draw();
+            }
+        }
+
+        function handleTouchEnd() {
+            if (event.touches.length === 0) {
+                initialDistance = null;
+                isDragging = false;
+            }
+        }
+
+
+        canvas.addEventListener('touchstart', handleTouchStart);
+        canvas.addEventListener('touchmove', handleTouchMove);
+        canvas.addEventListener('touchend', handleTouchEnd);
+
+        canvas.addEventListener('wheel', handleWheel);
+        canvas.addEventListener('mouseenter', () => {
+            mouseInCanvas = true;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            mouseInCanvas = false;
+        });
+        canvas.addEventListener('mousedown', handleMouseDown);
+        canvas.addEventListener('mousemove', handleMouseMove);
+        canvas.addEventListener('mouseup', handleMouseUp);
+        canvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+            edgeScrollActive = false;
+        });
+
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            draw();
+            updateUrlParams();
+        });
+
+
+        function newKeyEvents(key, holdDuration = 50) {
+            let isKeyPressed = false;
+            let keyHoldTimeout = null;
+
+            view.addEventListener('keydown', (e) => {
+                if (e.key === key && !isKeyPressed) {
+                    isKeyPressed = true;
+
+                    const keyHoldStartEvent = new CustomEvent(`${key}HoldStart`);
+                    view.dispatchEvent(keyHoldStartEvent);
+
+                    keyHoldTimeout = setTimeout(() => {
+                        const keyHoldEvent = new CustomEvent(`${key}Hold`);
+                        view.dispatchEvent(keyHoldEvent);
+                    }, holdDuration);
+                }
+            });
+
+            view.addEventListener('keyup', (e) => {
+                if (e.key === key && isKeyPressed) {
+                    const keyHoldEndEvent = new CustomEvent(`${key}HoldEnd`);
+                    view.dispatchEvent(keyHoldEndEvent);
+
+                    isKeyPressed = false;
+                    if (keyHoldTimeout) {
+                        clearTimeout(keyHoldTimeout);
+                    }
+                }
+            });
+        }
+
+        newKeyEvents('Control');
+
+
+        view.addEventListener('ControlHold', () => {
+            if (mode !== "zoom") {
+                toggleMode()
+            }
+        });
+
+
+        view.addEventListener('ControlHoldEnd', () => {
+            if (mode === "zoom") {
+                toggleMode()
+            }
+        });
+
+
+
+        canvas.addEventListener("dblclick", function (e) {
+
+            if (scale_size.unit < 5) {
+                window.open(`https://annas-archive.org/search?q=${global_position.ISBN}`);
+
+            } else {
+                triggerZoomBox(e)
+            }
+
+
+            console.log(location.ISBN)
+            //   myDiv.style.backgroundColor = "yellow"; // Change background color on double click
+        });
+        function copyText(text, event) {
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    showFeedback("Copied!", event, "lightgreen");
+                })
+                .catch(err => {
+                    showFeedback("Copy failed!", event, "lightcoral");
+                });
+        }
+
+
+
+        function showFeedback(message, event, color) {
+            const feedback = view.createElement('div');
+            feedback.textContent = message;
+            feedback.style.position = 'absolute';
+            feedback.style.top = 0  //event.clientY ?? 0 + 'px';
+            feedback.style.right = 0 // event.clientX ?? 0 + 'px';
+            feedback.style.backgroundColor = color;
+            feedback.style.padding = '5px';
+            feedback.style.borderRadius = '5px';
+            view.body.appendChild(feedback);
+            setTimeout(() => {
+                feedback.remove();
+            }, 1500);
+        }
+
+
+
+        view.addEventListener("keydown", function (event) {
+            const isCtrl = event.ctrlKey || event.metaKey;
+            const isCKey = event.key === "c" || event.key === "C";
+
+            if (isCtrl && isCKey) {
+
+                copyText(global_position.ISBN)
+            }
+        });
+
+        const regions = {
+            978000000000: "English language",
+            // 978100000000: "English language",
+            978200000000: "French language",
+            978300000000: "German language",
+            978400000000: "Japan",
+            978500000000: "former U.S.S.R",
+
+            // 
+            978600000000: "Iran",
+            978601000000: "Kazakhstan",
+            978602000000: "Indonesia",
+            978603000000: "Saudi Arabia",
+            978604000000: "Vietnam",
+            978605000000: "Turkey",
+            978606000000: "Romania",
+            978607000000: "Mexico",
+            978608000000: "North Macedonia",
+            978609000000: "Lithuania",
+            978610000000: "Philippines",
+            978611000000: "Thailand",
+            978612000000: "Peru",
+            978613000000: "Mauritius",
+            978614000000: "Lebanon",
+            978615000000: "Hungary",
+            978616000000: "Thailand",
+            978617000000: "Ukraine",
+            978618000000: "Greece",
+            978619000000: "Bulgaria",
+            978620000000: "Mauritius",
+            978621000000: "Philippines",
+            978622000000: "Iran",
+            978623000000: "Indonesia",
+            978624000000: "Sri Lanka",
+            978625000000: "Turkey",
+            978626000000: "Taiwan",
+            978627000000: "Pakistan",
+            978628000000: "Colombia",
+            978629000000: "Malaysia",
+            978630000000: "Romania",
+            978631000000: "Argentina",
+            978700000000: "China, People's Republic",
+            978800000000: "former Czechoslovakia",
+            978810000000: "India",
+            978820000000: "Norway",
+            978830000000: "Poland",
+            978840000000: "Spain",
+            978850000000: "Brazil",
+            978860000000: "former Yugoslavia",
+            978870000000: "Denmark",
+            978880000000: "Italy",
+            978890000000: "Korea, Republic",
+            978900000000: "Netherlands",
+            978910000000: "Sweden",
+            978920000000: "International NGO Publishers and EU Organizations",
+            978930000000: "India",
+            978940000000: "Netherlands",
+            978950000000: "Argentina",
+            978951000000: "Finland",
+            978952000000: "Finland",
+            978953000000: "Croatia",
+            978954000000: "Bulgaria",
+            978955000000: "Sri Lanka",
+            978956000000: "Chile",
+            978957000000: "Taiwan",
+            978958000000: "Colombia",
+            978959000000: "Cuba",
+            978960000000: "Greece",
+            978961000000: "Slovenia",
+            978962000000: "Hong Kong, China",
+            978963000000: "Hungary",
+            978964000000: "Iran",
+            978965000000: "Israel",
+            978966000000: "Ukraine",
+            978967000000: "Malaysia",
+            978968000000: "Mexico",
+            978969000000: "Pakistan",
+            978970000000: "Mexico",
+            978971000000: "Philippines",
+            978972000000: "Portugal",
+            978973000000: "Romania",
+            978974000000: "Thailand",
+            978975000000: "Turkey",
+            978976000000: "Caribbean Community",
+            978977000000: "Egypt",
+            978978000000: "Nigeria",
+            978979000000: "Indonesia",
+            978980000000: "Venezuela",
+            978981000000: "Singapore",
+            978982000000: "South Pacific",
+            978983000000: "Malaysia",
+            978984000000: "Bangladesh",
+            978985000000: "Belarus",
+            978986000000: "Taiwan",
+            978987000000: "Argentina",
+            978988000000: "Hong Kong, China",
+            978989000000: "Portugal",
+            ////
+            ////
+            978990800000: "Estonia",
+            978990900000: "Tunisia",
+            978991000000: "Uzbekistan",
+            978991100000: "Montenegro",
+            978991200000: "Tanzania",
+            978991300000: "Uganda",
+            978991400000: "Kenya",
+            978991500000: "Uruguay",
+            978991600000: "Estonia",
+            978991700000: "Bolivia",
+            978991800000: "Malta",
+            978991900000: "Mongolia",
+            978992000000: "Morocco",
+            978992100000: "Kuwait",
+            978992200000: "Iraq",
+            978992300000: "Jordan",
+            978992400000: "Cambodia",
+            978992500000: "Cyprus",
+            978992600000: "Bosnia and Herzegovina",
+            978992700000: "Qatar",
+            978992800000: "Albania",
+            978992900000: "Guatemala",
+            978993000000: "Costa Rica",
+            978993100000: "Algeria",
+            978993200000: "Laos",
+            978993300000: "Syria",
+            978993400000: "Latvia",
+            978993500000: "Iceland",
+            978993600000: "Afghanistan",
+            978993700000: "Nepal",
+            978993800000: "Tunisia",
+            978993900000: "Armenia",
+            978994000000: "Montenegro",
+            978994100000: "Georgia",
+            978994200000: "Ecuador",
+            978994300000: "Uzbekistan",
+            978994400000: "Turkey",
+            978994500000: "Dominican Republic",
+            978994600000: "North Korea",
+            978994700000: "Algeria",
+            978994800000: "United Arab Emirates",
+            978994900000: "Estonia",
+            978995000000: "Palestine",
+            978995100000: "Kosovo",
+            978995200000: "Azerbaijan",
+            978995300000: "Lebanon",
+            978995400000: "Morocco",
+            978995500000: "Lithuania",
+            978995600000: "Cameroon",
+            978995700000: "Jordan",
+            978995800000: "Bosnia and Herzegovina",
+            978995900000: "Libya",
+            978996000000: "Saudi Arabia",
+            978996100000: "Algeria",
+            978996200000: "Panama",
+            978996300000: "Cyprus",
+            978996400000: "Ghana",
+            978996500000: "Kazakhstan",
+            978996600000: "Kenya",
+            978996700000: "Kyrgyzstan",
+            978996800000: "Costa Rica",
+            978996900000: "Algeria",
+            978997000000: "Uganda",
+            978997100000: "Singapore",
+            978997200000: "Peru",
+            978997300000: "Tunisia",
+            978997400000: "Uruguay",
+            978997500000: "Moldova",
+            978997600000: "Tanzania",
+            978997700000: "Costa Rica",
+            978997800000: "Ecuador",
+            978997900000: "Iceland",
+            978998000000: "Papua New Guinea",
+            978998100000: "Morocco",
+            978998200000: "Zambia",
+            978998300000: "Gambia",
+            978998400000: "Latvia",
+            978998500000: "Estonia",
+            978998600000: "Lithuania",
+            978998700000: "Tanzania",
+            978998800000: "Ghana",
+            978998900000: "North Macedonia",
+            //
+            //
+            //
+
+            978999010000: " Bahrain",
+            978999020000: "Reserved Agency (was  Gabon)",
+            978999030000: "Mauritius",
+            978999040000: "Curaçao (was  Netherlands Antilles, and  Aruba)",
+            978999050000: "Bolivia",
+            978999060000: "Kuwait",
+            978999070000: "nallocated",
+            978999080000: "Malawi",
+            978999090000: "Malta",
+            978999100000: "Sierra Leone",
+            978999110000: "Lesotho",
+            978999120000: "Botswana",
+            978999130000: "Andorra",
+            978999140000: "Suriname",
+            978999150000: "Maldives",
+            978999160000: "Namibia",
+            978999170000: "Brunei",
+            978999180000: "Faroe Islands",
+            978999190000: "Benin",
+            978999200000: "Andorra",
+            978999210000: "Qatar",
+            978999220000: "Guatemala",
+            978999230000: "El Salvador",
+            978999240000: "Nicaragua",
+            978999250000: "Paraguay",
+            978999260000: "Honduras",
+            978999270000: "Albania",
+            978999280000: "Georgia",
+            978999290000: "Mongolia",
+            978999300000: "Armenia",
+            978999310000: "Seychelles",
+            978999320000: "Malta",
+            978999330000: "  Nepal",
+            978999340000: "Dominican Republic",
+            978999350000: "Haiti",
+            978999360000: "Bhutan",
+            978999370000: "Macau",
+            978999380000: "Republika Srpska",
+            978999390000: "Guatemala",
+            978999400000: "Georgia",
+            978999410000: "Armenia",
+            978999420000: "Sudan",
+            978999430000: "Albania",
+            978999440000: "Ethiopia",
+            978999450000: "Namibia",
+            978999460000: "  Nepal",
+            978999470000: "Tajikistan",
+            978999480000: "Eritrea",
+            978999490000: "Mauritius",
+            978999500000: "Cambodia",
+            978999510000: "eserved Agency (was  Democratic Republic of Congo)",
+            978999520000: "Mali",
+            978999530000: "Paraguay",
+            978999540000: "Bolivia",
+            978999550000: "Republika Srpska",
+            978999560000: "Albania",
+            978999570000: "Malta",
+            978999580000: "Bahrain",
+            978999590000: "Luxembourg",
+            978999600000: "Malawi",
+            978999610000: "El Salvador",
+            978999620000: "Mongolia",
+            978999630000: "Cambodia",
+            978999640000: "Nicaragua",
+            978999650000: "Macau",
+            978999660000: "Kuwait",
+            978999670000: "Paraguay",
+            978999680000: "Botswana",
+            978999690000: "Oman",
+            978999700000: "Haiti",
+            978999710000: "Myanmar",
+            978999720000: "Faroe Islands",
+            978999730000: "Mongolia",
+            978999740000: "Bolivia",
+            978999750000: "Tajikistan",
+            978999760000: "Republika Srpska",
+            978999770000: "Rwanda",
+            978999780000: "Mongolia",
+            978999790000: "Honduras",
+            978999800000: "Bhutan",
+            978999810000: "Macau",
+            978999820000: "Benin",
+            978999830000: "El Salvador",
+            978999840000: "Brunei",
+            978999850000: "Tajikistan",
+            978999860000: "Myanmar",
+            978999870000: "Luxembourg",
+            978999880000: "Sudan",
+            978999890000: "Paraguay",
+            978999900000: "Ethiopia",
+            978999910000: "nallocated",
+            978999920000: "Oman",
+            978999930000: "Mauritius",
+            978999940000: "Haiti",
+            978999950000: "Seychelles",
+
+            979000000000: "(International Standard Music Number)",
+            979100000000: "France",
+            979110000000: "South Korea",
+            979120000000: "Italy",
+            979130000000: "Spain",
+            979140000000: "Unallocated/shared with ISMN",
+            979200000000: "Unallocated",// 2~7-	unallocated, shared with ISMN
+            979800000000: "United States of America",
+
+            // 14~19-	unallocated, shared with ISMN
+
+
+
+            // 979100000000: "France",
+            // 979110000000: "Korea, Republic",
+            // 979120000000: "Italy",
+            // 979800000000: "United States",
+
+            // 978999000000: "PREFIX-5",
+            // 978999900000: "PREFIX-5",
+
+
+
+            // 978999960000: "Ending..........",
+            979999999999: "Ending.........."
+        }
+
+
+
+
+        let boundaries = {
+            "groups":  listBoundaries()
+        }
+
+
+
+        function drawBoundaries() {
+            layers.forEach((indicator) => {
+                if (!indicator.enabled || indicator.type == "indicator") return;
+
+                if(!boundaries.hasOwnProperty(indicator.id)) return;
+                
+                
+                boundaries[indicator.id].forEach((v) => {
+                    ctx.strokeStyle = indicator.color;
+                    drawBoundaryPath(v[0], v[1], v[2]);
+                })
+            })
+        }
+
+
+        function listBoundaries() {
+
+            var boundaries = []
+
+            const keys = Object.entries(regions)
+
+            for (let index = 0; index < keys.length - 1; index++) {
+                const region0 = parseInt(keys[index][0]) - isbn0
+                const regionend = parseInt(keys[index + 1][0]) - isbn0
+                boundaries.push([region0, regionend, keys[index][1], "red"]) // randomHEXColor()
+            }
+
+            return boundaries
+        }
+
+
+
+
+        function isbnCheckDigit(isbn) {
+
+            let total = 0;
+            for (let i = 0; i < 9; i++) {
+                total += (10 - i) * parseInt(isbn[i], 10);
+            }
+
+            let remainder = total % 11;
+            let checkDigit = (11 - remainder) % 11;
+
+            return checkDigit === 10 ? 'X' : checkDigit.toString();
+        }
+
+        function getISBNIdentity(isbn) {
+
+
+            for (let index = 0; index < boundaries.length; index++) {
+
+                const range = boundaries[index];
+
+                if (isbn >= range[0] && isbn <= range[1]) {
+
+                    return range[2]
+                }
+            }
+
+            return 'Unknown';
+        }
+
+        draw();
+
+    </script>
+</body>
+
+</html>
